@@ -1,0 +1,31 @@
+FROM php:8.3-fpm-alpine as base
+
+# Instalar dependencias del sistema y extensiones PHP
+RUN apk add --no-cache git unzip libzip-dev \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install pdo pdo_mysql bcmath zip
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+# ---- Etapa build (composer) ----
+FROM base as build
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+# ---- Etapa final ----
+FROM base as production
+
+# Copiar código y vendor
+COPY . .
+COPY --from=build /var/www/html/vendor ./vendor
+
+# Ajustar permisos
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R ug+rw storage bootstrap/cache
+
+USER www-data
+
+CMD ["php-fpm", "-F"]
