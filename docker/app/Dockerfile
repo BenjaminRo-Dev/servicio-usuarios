@@ -1,13 +1,13 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.3-fpm
 
 # Paquetes y extensiones necesarias
-RUN apk add --no-cache git unzip libzip-dev \
- && docker-php-ext-configure zip \
+RUN apt-get update && apt-get install -y \
+    git unzip libzip-dev libpng-dev libonig-dev libxml2-dev curl \
  && docker-php-ext-install pdo pdo_mysql bcmath zip
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
-CMD ["php-fpm", "-F"]
 
+CMD ["php-fpm"]
