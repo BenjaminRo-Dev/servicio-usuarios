@@ -11,14 +11,20 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copia el código
+# Copia el código de la aplicación
 COPY . .
 
-# Instala dependencias de PHP sin dev
+# Instala dependencias de PHP
 RUN composer install --no-dev --optimize-autoloader
 
-# Permisos (Laravel storage y bootstrap/cache)
+# Genera la APP_KEY de Laravel si no existe
+RUN php artisan key:generate --ansi || true
+
+# Permisos correctos para storage y bootstrap/cache
 RUN chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
+
+# Expone el puerto 9000 para PHP-FPM
+EXPOSE 9000
 
 CMD ["php-fpm"]
